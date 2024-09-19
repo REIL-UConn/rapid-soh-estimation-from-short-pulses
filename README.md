@@ -4,9 +4,9 @@ This repository contains the Python scripts and processed data required to recre
 *Questions pertaining to the scripts and data provided in this repository can be directed to Ben Nowacki (benjamin.nowacki@uconn.edu)*
 
 
-##  Paper Overview & Abstract
+##  Paper Details & Abstract
 
-**Rapid Estimation of Lithium-Ion Battery Capacity and Resistance from Short Duration Current Pulses**
+### Rapid Estimation of Lithium-Ion Battery Capacity and Resistance from Short Duration Current Pulses
 
 Ben Nowacki $^{1*}$, Jayanth Ramamurthy $^{2*}$, Adam Thelen $^{2}$, Chad Tischer $^{3}$, Cary L. Pint $^{2}$, Chao Hu $^{1,\dagger}$
 
@@ -50,7 +50,22 @@ Rapid onboard diagnosis of battery state of health enables the use of real-time 
 
 ### `notebooks/`
 
+
+
+
 ### `processed_data/`
+
+Note that due to the size of all raw data, only processed data is retained in this Git repository. The raw data collected on the 64 LFP/Gr cells can be downloaded at: $\textcolor{red}{\text{ADD LINK TO PUBLISHED DATASET}}$. Please see the 'README.md' file contained in the above linked data for an overview of how the raw data files are structured.
+
+
+
+ 
+
+
+
+
+Separate folders may be created within the `processed_data` folder for separating data used in different scripts. For example, RPT and EIS data will be stored in independent processed files. A separate `README.md` is provided under this folder to explain the usee of each subfolder and the underlying data structure. 
+
 
 ### `rapid-soh-estimation/`
 
