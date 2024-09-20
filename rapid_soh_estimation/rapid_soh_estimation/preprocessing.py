@@ -11,60 +11,61 @@ dir_data_rpt_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC RPT Da
 dir_data_cycling_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC Cycling Data')
 
 
+
 def get_neware_data_header_keys(rpt_data:pd.DataFrame) -> tuple:
-    '''
-    Provided the details sheet (sheet_name=3 in pd.read_excel) of a saved Neware excel file, returns the columns headers and units
-    Returns: (v_key, v_modifier, i_key, i_modifier, q_key, q_modifier)
-    '''
-    v_key = list(rpt_data.keys())[np.argwhere( np.char.find( list(rpt_data.keys()), 'Voltage' ) == 0 )[0][0]]
-    v_modifier = 1 if (v_key.rfind('mV') == -1) else (1/1000)
-    i_key = list(rpt_data.keys())[np.argwhere( np.char.find( list(rpt_data.keys()), 'Current' ) == 0 )[0][0]]
-    i_modifier = 1 if (i_key.rfind('mA') == -1) else (1/1000)
-    q_key = list(rpt_data.keys())[np.argwhere( np.char.find( list(rpt_data.keys()), 'Capacity' ) == 0 )[0][0]]
-    q_modifier = 1 if (q_key.rfind('mAh') == -1) else (1/1000)
-    
-    return v_key, v_modifier, i_key, i_modifier, q_key, q_modifier
+	'''
+	Provided the details sheet (sheet_name=3 in pd.read_excel) of a saved Neware excel file, returns the columns headers and units
+	Returns: (v_key, v_modifier, i_key, i_modifier, q_key, q_modifier)
+	'''
+	v_key = list(rpt_data.keys())[np.argwhere( np.char.find( list(rpt_data.keys()), 'Voltage' ) == 0 )[0][0]]
+	v_modifier = 1 if (v_key.rfind('mV') == -1) else (1/1000)
+	i_key = list(rpt_data.keys())[np.argwhere( np.char.find( list(rpt_data.keys()), 'Current' ) == 0 )[0][0]]
+	i_modifier = 1 if (i_key.rfind('mA') == -1) else (1/1000)
+	q_key = list(rpt_data.keys())[np.argwhere( np.char.find( list(rpt_data.keys()), 'Capacity' ) == 0 )[0][0]]
+	q_modifier = 1 if (q_key.rfind('mAh') == -1) else (1/1000)
+
+	return v_key, v_modifier, i_key, i_modifier, q_key, q_modifier
 
 def get_rpt_mapping() -> pd.DataFrame:
-    '''
-    returns DataFrame containing mapping of step number to segment key and SOC key, and gives a description of that step
-    '''
+	'''
+	returns DataFrame containing mapping of step number to segment key and SOC key, and gives a description of that step
+	'''
 
-    df_mapping = pd.DataFrame(columns=['Step', 'Segment Key', 'Pulse Type', 'Pulse SOC'], index=np.arange(0,61.5,1))
+	df_mapping = pd.DataFrame(columns=['Step', 'Segment Key', 'Pulse Type', 'Pulse SOC'], index=np.arange(0,61.5,1))
 
-    df_mapping['Step'] = np.arange(1,62.5,1).astype(int)
-    df_mapping['Segment Key'] = '-'     # {'ref_chg', 'ref_dchg', 'slowpulse', 'fastpulse', 'ultrafastpulse'}
-    df_mapping['Pulse Type'] = '-'      # {'chg', 'dchg'}
-    df_mapping['Pulse SOC'] = np.nan    # {20, 50, 90}
+	df_mapping['Step'] = np.arange(1,62.5,1).astype(int)
+	df_mapping['Segment Key'] = '-'     # {'ref_chg', 'ref_dchg', 'slowpulse', 'fastpulse', 'ultrafastpulse'}
+	df_mapping['Pulse Type'] = '-'      # {'chg', 'dchg'}
+	df_mapping['Pulse SOC'] = np.nan    # {20, 50, 90}
 
-    # steps for reference discharge and charge segments
-    df_mapping.loc[df_mapping['Step'].isin(np.asarray([2,10,18,26])), 'Segment Key'] = 'ref_chg'
-    df_mapping.loc[df_mapping['Step'] == 28, 'Segment Key'] = 'ref_dchg'
+	# steps for reference discharge and charge segments
+	df_mapping.loc[df_mapping['Step'].isin(np.asarray([2,10,18,26])), 'Segment Key'] = 'ref_chg'
+	df_mapping.loc[df_mapping['Step'] == 28, 'Segment Key'] = 'ref_dchg'
 
-    # steps for slow pulses
-    for i, soc in enumerate([20,50,90]):
-        df_mapping.loc[df_mapping['Step'].isin(np.arange(4+(8*i), 9.5+(8*i), 1)), 'Segment Key'] = 'slowpulse'
-        df_mapping.loc[df_mapping['Step'].isin(np.arange(4+(8*i), 6.5+(8*i), 1)), 'Pulse Type'] = 'chg'
-        df_mapping.loc[df_mapping['Step'].isin(np.arange(7+(8*i), 9.5+(8*i), 1)), 'Pulse Type'] = 'dchg'
-        df_mapping.loc[df_mapping['Step'].isin(np.arange(4+(8*i), 9.5+(8*i), 1)), 'Pulse SOC'] = soc
+	# steps for slow pulses
+	for i, soc in enumerate([20,50,90]):
+		df_mapping.loc[df_mapping['Step'].isin(np.arange(4+(8*i), 9.5+(8*i), 1)), 'Segment Key'] = 'slowpulse'
+		df_mapping.loc[df_mapping['Step'].isin(np.arange(4+(8*i), 6.5+(8*i), 1)), 'Pulse Type'] = 'chg'
+		df_mapping.loc[df_mapping['Step'].isin(np.arange(7+(8*i), 9.5+(8*i), 1)), 'Pulse Type'] = 'dchg'
+		df_mapping.loc[df_mapping['Step'].isin(np.arange(4+(8*i), 9.5+(8*i), 1)), 'Pulse SOC'] = soc
 
-    # steps for fast pulses
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(32, 37.5, 1)), 'Segment Key'] = 'fastpulse'
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(32, 37.5, 1)), 'Pulse Type'] = 'chg'
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(32, 37.5, 1)), 'Pulse SOC'] = 90
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(42, 47.5, 1)), 'Segment Key'] = 'fastpulse'
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(42, 47.5, 1)), 'Pulse Type'] = 'dchg'
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(42, 47.5, 1)), 'Pulse SOC'] = 90
+	# steps for fast pulses
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(32, 37.5, 1)), 'Segment Key'] = 'fastpulse'
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(32, 37.5, 1)), 'Pulse Type'] = 'chg'
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(32, 37.5, 1)), 'Pulse SOC'] = 90
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(42, 47.5, 1)), 'Segment Key'] = 'fastpulse'
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(42, 47.5, 1)), 'Pulse Type'] = 'dchg'
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(42, 47.5, 1)), 'Pulse SOC'] = 90
 
-    # steps for ultra fast pulses
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(51, 53.5, 1)), 'Segment Key'] = 'ultrafastpulse'
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(51, 53.5, 1)), 'Pulse Type'] = 'chg'
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(51, 53.5, 1)), 'Pulse SOC'] = 90
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(57, 59.5, 1)), 'Segment Key'] = 'ultrafastpulse'
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(57, 59.5, 1)), 'Pulse Type'] = 'dchg'
-    df_mapping.loc[df_mapping['Step'].isin(np.arange(57, 59.5, 1)), 'Pulse SOC'] = 90
+	# steps for ultra fast pulses
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(51, 53.5, 1)), 'Segment Key'] = 'ultrafastpulse'
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(51, 53.5, 1)), 'Pulse Type'] = 'chg'
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(51, 53.5, 1)), 'Pulse SOC'] = 90
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(57, 59.5, 1)), 'Segment Key'] = 'ultrafastpulse'
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(57, 59.5, 1)), 'Pulse Type'] = 'dchg'
+	df_mapping.loc[df_mapping['Step'].isin(np.arange(57, 59.5, 1)), 'Pulse SOC'] = 90
 
-    return df_mapping
+	return df_mapping
 
 def get_week_num_from_folder_filepath(f_folder:Path) -> float:
 	'''
@@ -81,6 +82,7 @@ def get_week_num_from_folder_filepath(f_folder:Path) -> float:
 	except:
 		raise ValueError(f"Filename error. Could not find the week number in the following folder: {f_folder.name}. Ensure folder follows the naming convention of \'Week ##.# RPT\'")
 
+
 def get_channel_from_filename(f_file:Path) -> float:
 	splits = str(f_file.name).split('-')
 	channel_id = splits[1] + '-' + splits[2]
@@ -88,12 +90,12 @@ def get_channel_from_filename(f_file:Path) -> float:
 	return channel_id
 
 def get_rpt_df_cols():
-    columns = [
-        'Week Number', 'RPT Number', 'Date (yyyy.mm.dd-hh.mm.ss)', 
-        'State', 'Time (s)', 'Voltage (V)', 'Current (A)', 'Capacity (Ah)',
-        'Segment Key', 'Pulse Type', 'Pulse SOC',
-    ]
-    return columns
+	columns = [
+		'Week Number', 'RPT Number', 'Date (yyyy.mm.dd-hh.mm.ss)', 
+		'State', 'Time (s)', 'Voltage (V)', 'Current (A)', 'Capacity (Ah)',
+		'Segment Key', 'Pulse Type', 'Pulse SOC',
+	]
+	return columns
 
 def get_cycling_df_cols():
 	columns = [
@@ -103,36 +105,36 @@ def get_cycling_df_cols():
 	return columns
 
 def convert_rpt_rel_time_to_float(ts):
-    '''converts the RPT data under the \'Relative Time(h:min:s.ms\' column to float values'''
+	'''converts the RPT data under the \'Relative Time(h:min:s.ms\' column to float values'''
 
-    # two steps: convert all time-strings to seconds, then convert relative time to continuous time
-    t_seconds = np.zeros_like(ts, dtype=float)
-    t_deltas = np.zeros_like(ts, dtype=float)
-    t_continuous = np.zeros_like(ts, dtype=float)
+	# two steps: convert all time-strings to seconds, then convert relative time to continuous time
+	t_seconds = np.zeros_like(ts, dtype=float)
+	t_deltas = np.zeros_like(ts, dtype=float)
+	t_continuous = np.zeros_like(ts, dtype=float)
 
-    for i, time in enumerate(ts):
-        temp = sum(scaler * float(t) for scaler, t in zip([1, 60, 3600], reversed(time.split(":"))))
-        t_seconds[i] = temp
-        
-        if i == 0:
-            t_deltas[i] = temp
-        else:
-            if temp < t_seconds[i-1]:
-                t_deltas[i] = temp
-            else:
-                t_deltas[i] = temp - t_seconds[i-1]
-    for i, _ in enumerate(t_deltas):
-        if i == 0:
-            t_continuous[i] = t_deltas[0]
-        else:
-            t_continuous[i] = t_continuous[i-1] + t_deltas[i]
+	for i, time in enumerate(ts):
+		temp = sum(scaler * float(t) for scaler, t in zip([1, 60, 3600], reversed(time.split(":"))))
+		t_seconds[i] = temp
+		
+		if i == 0:
+			t_deltas[i] = temp
+		else:
+			if temp < t_seconds[i-1]:
+				t_deltas[i] = temp
+			else:
+				t_deltas[i] = temp - t_seconds[i-1]
+	for i, _ in enumerate(t_deltas):
+		if i == 0:
+			t_continuous[i] = t_deltas[0]
+		else:
+			t_continuous[i] = t_continuous[i-1] + t_deltas[i]
 
-    return t_continuous
+	return t_continuous
 
 
 def extract_data_from_rpt(path_rpt:Path, week_num=None, rpt_num=None) -> pd.DataFrame:
 	assert path_rpt.exists()
-    
+	
 	# open rpt file
 	with warnings.catch_warnings():
 		warnings.filterwarnings("ignore", category=UserWarning, module=re.escape('openpyxl.styles.stylesheet'))
@@ -140,7 +142,7 @@ def extract_data_from_rpt(path_rpt:Path, week_num=None, rpt_num=None) -> pd.Data
 	rpt_data_test_info = all_rpt_data[0]
 	rpt_data_stats = all_rpt_data[2]
 	rpt_data_details = all_rpt_data[3]
-     
+	
 	v_key, v_modifier, i_key, i_modifier, q_key, q_modifier = get_neware_data_header_keys(rpt_data_details)
 	rpt_mapping = get_rpt_mapping()
 
@@ -177,7 +179,7 @@ def extract_data_from_cycling(path_cycling:Path, week_num=None) -> pd.DataFrame:
 	cycling_data_test_info = all_cycling[0]
 	cycling_data_stats = all_cycling[2]
 	cycling_data_details = all_cycling[3]
-     
+	
 	v_key, v_modifier, i_key, i_modifier, q_key, q_modifier = get_neware_data_header_keys(cycling_data_details)
 
 	new_df = pd.DataFrame(columns=get_cycling_df_cols())
@@ -193,14 +195,14 @@ def extract_data_from_cycling(path_cycling:Path, week_num=None) -> pd.DataFrame:
 	return new_df
 
 
-def process_rpt_data(overwrite_existing:bool=False):
+def process_rpt_data(file_size_limit_gb=0.5):
 	''' Processes all RPT data
-	overwrite_existing : bool, default=True
-	\tWhether to overwrite existing processed files
+	file_size_limit_gb: default=0.5
+	\tCan optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once.
 	'''
-    
+	
 	all_folders = [f for f in dir_data_rpt_raw.glob('*') if f.is_dir()]
-	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath)[:2]:
+	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath):
 		if not dir_week.is_dir(): continue
 		week_num = get_week_num_from_folder_filepath(dir_week)
 		rpt_num = int(week_num * 2)
@@ -212,37 +214,70 @@ def process_rpt_data(overwrite_existing:bool=False):
 			assert len(cell_id) == 1
 			cell_id = int(cell_id[0])
 
-			filename = dir_processed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}.pkl")
+			#region: get file name for saving processed data
+			filename = None
+			filename_idx = None
+			if file_size_limit_gb is None:
+				filename = dir_processed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}.pkl")
+			# create new file if previous file size is too large
+			else: 
+				# find the next filename_idx of a file with size < file_size_limit_gb
+				filename_idx = 0
+				filename = dir_processed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+				while filename.exists() and ((filename.stat().st_size / 1000000000) >= file_size_limit_gb):
+					filename_idx += 1
+					filename = dir_processed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 			filename.parent.mkdir(parents=True, exist_ok=True)
+			#endregion
 
+			#region: check if this RPT was already processed, if so skip
+			rpt_processed = False
+			# if using a file size limit, we need to check all previous files for the RPT number
+			if filename_idx is not None:
+				# go through all prev processed files for this cell
+				for f_idx in np.arange(filename_idx, -0.5, -1, dtype=int):
+					# get new filename for this current iteration of f_idx
+					filename_idx_start = str(filename.name).rindex('_part') + len('_part')
+					filename_iter = filename.parent.joinpath(f'{str(filename.name)[:filename_idx_start]}{f_idx:d}.pkl')
+					if not filename_iter.exists(): continue
+					df_cell_iter = pickle.load(open(filename_iter, 'rb'))
+					# if RPT exists then this current RPT file was already processed, skip
+					if rpt_num in df_cell_iter['RPT Number'].values: 
+						rpt_processed = True
+						break
+			if rpt_processed: continue
+			#endregion
+
+			#region: create empty dataframe or load previous data for current cell
 			df_cell = None
 			if filename.exists():
 				df_cell = pickle.load(open(filename, 'rb'))
-				# skip this file if already processed
-				if rpt_num in df_cell['RPT Number'].values and not overwrite_existing: continue
 			else:
 				df_cell = pd.DataFrame(columns=get_rpt_df_cols())
-				# make sure this is Week 00.0 since processed file doesn't exist yet
-				assert rpt_num == 0
+				# make sure this is Week 00.0 since processed file doesn't exist yet (only for no file limits)
+				if file_size_limit_gb is None: assert rpt_num == 0
+			#endregion
 
+			#region: process new rpt and concatenate to df_cell
 			print(f"  Cell {cell_id} ... ", end='')
 			new_df = extract_data_from_rpt(file_rpt, week_num=week_num, rpt_num=rpt_num)
 			if df_cell.empty:
 				df_cell = new_df
 			else:
 				df_cell = pd.concat([df_cell, new_df], ignore_index=True)
+			#endregion
 
 			pickle.dump(df_cell, open(filename, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 			print('updated')
-		
-def process_cycling_data(overwrite_existing:bool=False):
-	''' Processes all RPT data
-	overwrite_existing : bool, default=True
-	\tWhether to overwrite existing processed files
-	'''
 	
+def process_cycling_data(file_size_limit_gb=0.5):
+	''' Processes all Cycling data
+	file_size_limit_gb: default=0.5
+	\tCan optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once.
+	'''
+
 	all_folders = [f for f in dir_data_cycling_raw.glob('*') if f.is_dir()]
-	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath)[:2]:
+	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath):
 		if not dir_week.is_dir(): continue
 		week_num = get_week_num_from_folder_filepath(dir_week)
 		print(f"Processing Week {week_num}...")
@@ -253,34 +288,67 @@ def process_cycling_data(overwrite_existing:bool=False):
 			assert len(cell_id) == 1
 			cell_id = int(cell_id[0])
 
-			filename = dir_processed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}.pkl")
+			#region: get file name for saving processed data
+			filename = None
+			filename_idx = None
+			if file_size_limit_gb is None:
+				filename = dir_processed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}.pkl")
+			# create new file if previous file size is too large
+			else:
+				# find the next filename_idx of a file with size < file_size_limit_gb
+				filename_idx = 0
+				filename = dir_processed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+				while filename.exists() and ((filename.stat().st_size / 1000000000) >= file_size_limit_gb):
+					filename_idx += 1
+					filename = dir_processed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 			filename.parent.mkdir(parents=True, exist_ok=True)
+			#endregion
 
+			#region: check if this week was already processed, if so skip
+			cycling_processed = False
+			# if using a file size limit, we need to check all previous files for the RPT number
+			if filename_idx is not None:
+				# go through all prev processed files for this cell
+				for f_idx in np.arange(filename_idx, -0.5, -1, dtype=int):
+					# get new filename for this current iteration of f_idx
+					filename_idx_start = str(filename.name).rindex('_part') + len('_part')
+					filename_iter = filename.parent.joinpath(f'{str(filename.name)[:filename_idx_start]}{f_idx:d}.pkl')
+					if not filename_iter.exists(): continue
+					df_cell_iter = pickle.load(open(filename_iter, 'rb'))
+
+					# if week_num exists then this current cycling file was already processed, skip
+					if week_num in df_cell_iter['Week Number'].values: 
+						cycling_processed = True
+						break
+			if cycling_processed: continue
+			#endregion
+
+			#region: create empty dataframe or load previous data for current cell
 			df_cell = None
 			if filename.exists():
 				df_cell = pickle.load(open(filename, 'rb'))
-				# skip this file if already processed
-				if week_num in df_cell['Week Number'].values and not overwrite_existing: continue
 			else:
-				df_cell = pd.DataFrame(columns=get_rpt_df_cols())
-				# make sure this is Week 00.0 since processed file doesn't exist yet
-				assert week_num == 0
+				df_cell = pd.DataFrame(columns=get_cycling_df_cols())
+				# make sure this is Week 00.0 since processed file doesn't exist yet (only for no file limits)
+				if file_size_limit_gb is None: assert week_num == 0
+			#endregion
 
+			#region: process new rpt and concatenate to df_cell
 			print(f"  Cell {cell_id} ... ", end='')
 			new_df = extract_data_from_cycling(file_rpt, week_num=week_num)
 			if df_cell.empty:
 				df_cell = new_df
 			else:
 				df_cell = pd.concat([df_cell, new_df], ignore_index=True)
+			#endregion
 
 			pickle.dump(df_cell, open(filename, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
-			raise RuntimeError
 			print('updated')
 
-	
+
 
 if __name__ == '__main__':
-    process_rpt_data()
-    process_cycling_data()
+	process_rpt_data()
+	process_cycling_data()
 
-    print('preprocessing.py complete.')
+	print('preprocessing.py complete.')
