@@ -11,7 +11,6 @@ dir_data_rpt_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC RPT Da
 dir_data_cycling_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC Cycling Data')
 
 
-
 def get_neware_data_header_keys(rpt_data:pd.DataFrame) -> tuple:
 	'''
 	Provided the details sheet (sheet_name=3 in pd.read_excel) of a saved Neware excel file, returns the columns headers and units
@@ -99,7 +98,7 @@ def get_rpt_df_cols():
 
 def get_cycling_df_cols():
 	columns = [
-		'Week Number', 'Date (yyyy.mm.dd-hh.mm.ss)', 
+		'Week Number', 'Life', 'Date (yyyy.mm.dd-hh.mm.ss)', 
 		'State', 'Time (s)', 'Voltage (V)', 'Current (A)', 'Capacity (Ah)',
 	]
 	return columns
@@ -179,12 +178,16 @@ def extract_data_from_cycling(path_cycling:Path, week_num=None) -> pd.DataFrame:
 	cycling_data_test_info = all_cycling[0]
 	cycling_data_stats = all_cycling[2]
 	cycling_data_details = all_cycling[3]
+
+	protocol_name = cycling_data_test_info.loc[cycling_data_test_info['Test information'] == 'Process name:', 'Unnamed: 1'].values[0]
+	is_second_life = 'Second Life' in protocol_name
 	
 	v_key, v_modifier, i_key, i_modifier, q_key, q_modifier = get_neware_data_header_keys(cycling_data_details)
 
 	new_df = pd.DataFrame(columns=get_cycling_df_cols())
 	if week_num is not None: 
 		new_df['Week Number'] = np.full(len(cycling_data_details), week_num)
+	new_df['Life'] = np.full(len(cycling_data_details), '2nd' if is_second_life else '1st')
 	new_df['Date (yyyy.mm.dd hh.mm.ss)'] = pd.to_datetime(cycling_data_details['Date(h:min:s.ms)'].values, format="%Y-%m-%d %H:%M:%S")
 	new_df['State'] = cycling_data_details['State']
 	new_df['Time (s)'] = convert_rpt_rel_time_to_float(cycling_data_details['Relative Time(h:min:s.ms)'])
