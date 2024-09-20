@@ -7,6 +7,7 @@ from common_methods import *
 
 
 dir_dropbox = Path("/Users/bnowacki/Library/CloudStorage/Dropbox")
+assert dir_dropbox.exists()
 dir_data_rpt_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC RPT Data')
 dir_data_cycling_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC Cycling Data')
 
@@ -351,7 +352,7 @@ def process_cycling_data(file_size_limit_gb=0.5):
 
 
 if __name__ == '__main__':
-	process_rpt_data()
 	process_cycling_data()
+	process_rpt_data()
 
 	print('preprocessing.py complete.')
