@@ -10,6 +10,7 @@ dir_dropbox = Path("/Users/bnowacki/Library/CloudStorage/Dropbox")
 assert dir_dropbox.exists()
 dir_data_rpt_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC RPT Data')
 dir_data_cycling_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC Cycling Data')
+dir_data_preprocessed = dir_dropbox.joinpath("Datasets to Publish", "ILCC-LFP-aging-dataset")
 
 
 def get_neware_data_header_keys(rpt_data:pd.DataFrame) -> tuple:
@@ -267,15 +268,15 @@ def process_rpt_data(file_size_limit_gb=0.5):
 			filename = None
 			filename_idx = None
 			if file_size_limit_gb is None:
-				filename = dir_processed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}.pkl")
+				filename = dir_data_preprocessed.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}.pkl")
 			# create new file if previous file size is too large
 			else: 
 				# find the next filename_idx of a file with size < file_size_limit_gb
 				filename_idx = 0
-				filename = dir_processed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+				filename = dir_data_preprocessed.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 				while filename.exists() and ((filename.stat().st_size / 1000000000) >= file_size_limit_gb):
 					filename_idx += 1
-					filename = dir_processed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+					filename = dir_data_preprocessed.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 			filename.parent.mkdir(parents=True, exist_ok=True)
 			#endregion
 
@@ -342,15 +343,15 @@ def process_cycling_data(file_size_limit_gb=0.5):
 			filename = None
 			filename_idx = None
 			if file_size_limit_gb is None:
-				filename = dir_processed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}.pkl")
+				filename = dir_data_preprocessed.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}.pkl")
 			# create new file if previous file size is too large
 			else:
 				# find the next filename_idx of a file with size < file_size_limit_gb
 				filename_idx = 0
-				filename = dir_processed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+				filename = dir_data_preprocessed.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 				while filename.exists() and ((filename.stat().st_size / 1000000000) >= file_size_limit_gb):
 					filename_idx += 1
-					filename = dir_processed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+					filename = dir_data_preprocessed.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 			filename.parent.mkdir(parents=True, exist_ok=True)
 			#endregion
 
