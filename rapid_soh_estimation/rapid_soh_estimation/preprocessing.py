@@ -44,7 +44,7 @@ def get_rpt_mapping() -> pd.DataFrame:
 	df_mapping['Pulse SOC'] = np.nan    # {20, 50, 90}
 
 	# steps for reference discharge and charge segments
-	df_mapping.loc[df_mapping['Step'].isin(np.asarray([2,10,18,26])), 'Segment Key'] = 'ref_chg'
+	df_mapping.loc[df_mapping['Step'].isin(np.asarray([2,10,18,26, 30,38, 50,54])), 'Segment Key'] = 'ref_chg'
 	df_mapping.loc[df_mapping['Step'] == 28, 'Segment Key'] = 'ref_dchg'
 
 	# steps for slow pulses
@@ -108,7 +108,7 @@ def get_rpt_df_cols():
 	"""Predefined set of column names to use when processing RPT data"""
 	columns = [
 		'Week Number', 'RPT Number', 'Date (yyyy.mm.dd hh.mm.ss)', 
-		'State', 'Time (s)', 'Voltage (V)', 'Current (A)', 'Capacity (Ah)',
+		'Step Number', 'State', 'Time (s)', 'Voltage (V)', 'Current (A)', 'Capacity (Ah)',
 		'Segment Key', 'Pulse Type', 'Pulse SOC',
 	]
 	return columns
@@ -188,6 +188,7 @@ def extract_data_from_rpt(path_rpt:Path, week_num=None, rpt_num=None) -> pd.Data
 	if rpt_num is not None:
 		new_df['RPT Number'] = np.full(len(rpt_data_details), rpt_num)
 	new_df['Date (yyyy.mm.dd hh.mm.ss)'] = pd.to_datetime(rpt_data_details['Date(h:min:s.ms)'].values, format="%Y-%m-%d %H:%M:%S")
+	new_df['Step Number'] = rpt_data_details['Steps']
 	new_df['State'] = rpt_data_details['State']
 	new_df['Time (s)'] = convert_rpt_rel_time_to_float(rpt_data_details['Relative Time(h:min:s.ms)'])
 	new_df['Voltage (V)'] = rpt_data_details[v_key].astype(float).values * v_modifier
