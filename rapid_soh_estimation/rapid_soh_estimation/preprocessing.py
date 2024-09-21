@@ -13,10 +13,14 @@ dir_data_cycling_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC Cy
 
 
 def get_neware_data_header_keys(rpt_data:pd.DataFrame) -> tuple:
-	'''
-	Provided the details sheet (sheet_name=3 in pd.read_excel) of a saved Neware excel file, returns the columns headers and units
-	Returns: (v_key, v_modifier, i_key, i_modifier, q_key, q_modifier)
-	'''
+	"""Provided the details sheet (sheet_name=3 in pd.read_excel) of a saved Neware excel file, returns the columns headers and units
+
+	Args:
+		rpt_data (pd.DataFrame): details sheet of neware files
+
+	Returns:
+		tuple: (v_key, v_modifier, i_key, i_modifier, q_key, q_modifier)
+	"""
 	v_key = list(rpt_data.keys())[np.argwhere( np.char.find( list(rpt_data.keys()), 'Voltage' ) == 0 )[0][0]]
 	v_modifier = 1 if (v_key.rfind('mV') == -1) else (1/1000)
 	i_key = list(rpt_data.keys())[np.argwhere( np.char.find( list(rpt_data.keys()), 'Current' ) == 0 )[0][0]]
@@ -27,9 +31,10 @@ def get_neware_data_header_keys(rpt_data:pd.DataFrame) -> tuple:
 	return v_key, v_modifier, i_key, i_modifier, q_key, q_modifier
 
 def get_rpt_mapping() -> pd.DataFrame:
-	'''
-	returns DataFrame containing mapping of step number to segment key and SOC key, and gives a description of that step
-	'''
+	"""
+	Returns:
+		pd.DataFrame: Returns a df containing mapping of step number to segment key and SOC key, and gives a description of that step
+	"""
 
 	df_mapping = pd.DataFrame(columns=['Step', 'Segment Key', 'Pulse Type', 'Pulse SOC'], index=np.arange(0,61.5,1))
 
@@ -68,10 +73,13 @@ def get_rpt_mapping() -> pd.DataFrame:
 	return df_mapping
 
 def get_week_num_from_folder_filepath(f_folder:Path) -> float:
-	'''
-	f_folder: Path object to location of RPT folder (ex: ../Week 0.0 RPT)
-	returns: integer of week number
-	'''
+	"""Gets the week number from the folder name
+	Args:
+		f_folder (Path): Path object to location of RPT folder (ex: ../Week 0.0 RPT)
+	Returns:
+		float: week number as float
+	"""
+
 	try:
 		filename_str = str(f_folder.name)
 		if 'RPT' in filename_str:
@@ -83,29 +91,46 @@ def get_week_num_from_folder_filepath(f_folder:Path) -> float:
 		raise ValueError(f"Filename error. Could not find the week number in the following folder: {f_folder.name}. Ensure folder follows the naming convention of \'Week ##.# RPT\'")
 
 
-def get_channel_from_filename(f_file:Path) -> float:
+def get_channel_from_filename(f_file:Path) -> str:
+	"""Gets the channel id from the Neware filename
+	Args:
+		f_file (Path): Path object to exported Neware data excel file
+	Returns:
+		str: channel id (ex. '1-1')
+	"""
+
 	splits = str(f_file.name).split('-')
 	channel_id = splits[1] + '-' + splits[2]
 	assert channel_id in df_test_tracker['Channel'].unique()
 	return channel_id
 
 def get_rpt_df_cols():
+	"""Predefined set of column names to use when processing RPT data"""
 	columns = [
-		'Week Number', 'RPT Number', 'Date (yyyy.mm.dd-hh.mm.ss)', 
+		'Week Number', 'RPT Number', 'Date (yyyy.mm.dd hh.mm.ss)', 
 		'State', 'Time (s)', 'Voltage (V)', 'Current (A)', 'Capacity (Ah)',
 		'Segment Key', 'Pulse Type', 'Pulse SOC',
 	]
 	return columns
 
 def get_cycling_df_cols():
+	"""Predefined set of column names to use when processing Cycling data"""
 	columns = [
-		'Week Number', 'Life', 'Date (yyyy.mm.dd-hh.mm.ss)', 
+		'Week Number', 'Life', 'Date (yyyy.mm.dd hh.mm.ss)', 
 		'State', 'Time (s)', 'Voltage (V)', 'Current (A)', 'Capacity (Ah)',
 	]
 	return columns
 
-def convert_rpt_rel_time_to_float(ts):
-	'''converts the RPT data under the \'Relative Time(h:min:s.ms\' column to float values'''
+def convert_rpt_rel_time_to_float(ts:np.ndarray) -> np.ndarray:
+	"""Converts the RPT data under the \'Relative Time(h:min:s.ms\' column to float values
+
+	Args:
+		ts (np.ndarray): The values of the \'Relative Time(h:min:s.ms\' column
+
+	Returns:
+		np.ndarray: array of continuous time values (in seconds)
+	"""
+	''''''
 
 	# two steps: convert all time-strings to seconds, then convert relative time to continuous time
 	t_seconds = np.zeros_like(ts, dtype=float)
@@ -133,6 +158,16 @@ def convert_rpt_rel_time_to_float(ts):
 
 
 def extract_data_from_rpt(path_rpt:Path, week_num=None, rpt_num=None) -> pd.DataFrame:
+	"""Extracts all useful data from the raw Neware RPT data
+
+	Args:
+		path_rpt (Path): Path object to Neware RPT data (excel file)
+		week_num (float, optional): If provided, the week number is added to the created dataframe. Defaults to None.
+		rpt_num (int, optional): If provided, the rpt number is added to the created dataframe. Defaults to None.
+
+	Returns:
+		pd.DataFrame: Processed RPT data in dataframe form
+	"""
 	assert path_rpt.exists()
 	
 	# open rpt file
@@ -170,6 +205,15 @@ def extract_data_from_rpt(path_rpt:Path, week_num=None, rpt_num=None) -> pd.Data
 	return new_df
 
 def extract_data_from_cycling(path_cycling:Path, week_num=None) -> pd.DataFrame:
+	"""Extracts all useful data from the raw Neware cycling data
+
+	Args:
+		path_cycling (Path): Path object to Neware cycling data (excel file)
+		week_num (float, optional): If provided, the week number is added to the created dataframe. Defaults to None.
+
+	Returns:
+		pd.DataFrame: Processed cycling data in dataframe form
+	"""
 	assert path_cycling.exists()
 
 	# open rpt file
@@ -198,22 +242,22 @@ def extract_data_from_cycling(path_cycling:Path, week_num=None) -> pd.DataFrame:
 
 	return new_df
 
-
 def process_rpt_data(file_size_limit_gb=0.5):
-	''' Processes all RPT data
-	file_size_limit_gb: default=0.5
-	\tCan optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once.
-	'''
+	"""Automatically processes all RPT data. Skips files that have already been processed.
+
+	Args:
+		file_size_limit_gb (float, optional): Can optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once. Defaults to 0.5.
+	"""
 	
 	all_folders = [f for f in dir_data_rpt_raw.glob('*') if f.is_dir()]
-	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath):
+	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath)[0:10]:
 		if not dir_week.is_dir(): continue
 		week_num = get_week_num_from_folder_filepath(dir_week)
 		rpt_num = int(week_num * 2)
 		print(f"Processing Week {week_num}...")
 
 		all_files = [f for f in dir_week.glob('*') if f.is_file()]
-		for file_rpt in sorted(all_files, key=get_channel_from_filename):
+		for file_rpt in sorted(all_files, key=get_channel_from_filename)[0:1]:
 			cell_id = df_test_tracker.loc[df_test_tracker['Channel'] == get_channel_from_filename(file_rpt), 'Cell ID'].values
 			assert len(cell_id) == 1
 			cell_id = int(cell_id[0])
@@ -275,19 +319,20 @@ def process_rpt_data(file_size_limit_gb=0.5):
 			print('updated')
 	
 def process_cycling_data(file_size_limit_gb=0.5):
-	''' Processes all Cycling data
-	file_size_limit_gb: default=0.5
-	\tCan optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once.
-	'''
+	"""Automatically processes all cycling data. Skips files that have already been processed.
+
+	Args:
+		file_size_limit_gb (float, optional): Can optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once. Defaults to 0.5.
+	"""
 
 	all_folders = [f for f in dir_data_cycling_raw.glob('*') if f.is_dir()]
-	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath):
+	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath)[0:10]:
 		if not dir_week.is_dir(): continue
 		week_num = get_week_num_from_folder_filepath(dir_week)
 		print(f"Processing Week {week_num}...")
 
 		all_files = [f for f in dir_week.glob('*') if f.is_file()]
-		for file_rpt in sorted(all_files, key=get_channel_from_filename):
+		for file_rpt in sorted(all_files, key=get_channel_from_filename)[0:1]:
 			cell_id = df_test_tracker.loc[df_test_tracker['Channel'] == get_channel_from_filename(file_rpt), 'Cell ID'].values
 			assert len(cell_id) == 1
 			cell_id = int(cell_id[0])
@@ -349,10 +394,25 @@ def process_cycling_data(file_size_limit_gb=0.5):
 			pickle.dump(df_cell, open(filename, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 			print('updated')
 
+def add_life_info_to_rpt_data():
+	"""Updates RPT dataframes to include a 'Life' column indicating which rows correspond to first life or second life
+	"""
+	for cell_id in df_test_tracker['Cell ID'].unique():
+		# load RPT and cycling data for current cell id
+		df_rpt_data = load_processed_data(get_preprocessed_data_files(data_type='rpt', cell_id=cell_id))
+		df_cycling_data = load_processed_data(get_preprocessed_data_files(data_type='cycling', cell_id=cell_id))
+
+		# create 'Life' column in RPT data
+		df_rpt_data['Life'] = np.full(len(df_rpt_data), '1st')
+		# set 2nd life based on life info from cycling dataframe
+		start_2nd_life = df_cycling_data.loc[df_cycling_data['Life'] == '2nd', 'Week Number'].values[0]
+		df_rpt_data.loc[df_rpt_data['Week Number'] > start_2nd_life, 'Life'] = '2nd'
+
 
 
 if __name__ == '__main__':
 	process_cycling_data()
 	process_rpt_data()
+	add_life_info_to_rpt_data()
 
 	print('preprocessing.py complete.')
