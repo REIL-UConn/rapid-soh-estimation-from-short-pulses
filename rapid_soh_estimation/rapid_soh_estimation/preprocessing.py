@@ -261,7 +261,7 @@ def process_rpt_data(file_size_limit_gb=0.5):
 		if hasattr(file, '__len__'): file = file[0]
 		last_rpt_cell_map[c] = pickle.load(open(file, 'rb'))['RPT Number'].max()
 	
-	# process all rpt file sequentially (skip already processed onese)
+	# process all rpt file sequentially (skip already processed ones)
 	all_folders = [f for f in dir_data_rpt_raw.glob('*') if f.is_dir()]
 	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath):
 		if not dir_week.is_dir(): continue
@@ -323,6 +323,15 @@ def process_cycling_data(file_size_limit_gb=0.5):
 		file_size_limit_gb (float, optional): Can optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once. Defaults to 0.5.
 	"""
 
+	# get last processed week number for each cell
+	print("Retreiving last processed cycling data for each cell ... this may take a minute")
+	last_week_cell_map = {c:-1 for c in df_test_tracker['Cell ID'].unique()}
+	for c in last_week_cell_map.keys():
+		file = get_preprocessed_data_files(data_type='cycling', cell_id=c)
+		if hasattr(file, '__len__'): file = file[0]
+		last_week_cell_map[c] = pickle.load(open(file, 'rb'))['Week Number'].max()
+	
+	# process all cycling files sequentially (skip already processed ones)
 	all_folders = [f for f in dir_data_cycling_raw.glob('*') if f.is_dir()]
 	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath):
 		if not dir_week.is_dir(): continue
@@ -334,6 +343,9 @@ def process_cycling_data(file_size_limit_gb=0.5):
 			cell_id = df_test_tracker.loc[df_test_tracker['Channel'] == get_channel_from_filename(file_rpt), 'Cell ID'].values
 			assert len(cell_id) == 1
 			cell_id = int(cell_id[0])
+
+			# skip if already processed
+			if week_num <= last_week_cell_map[cell_id]: continue
 
 			#region: get file name for saving processed data
 			filename = None
@@ -349,25 +361,6 @@ def process_cycling_data(file_size_limit_gb=0.5):
 					filename_idx += 1
 					filename = dir_processed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 			filename.parent.mkdir(parents=True, exist_ok=True)
-			#endregion
-
-			#region: check if this week was already processed, if so skip
-			cycling_processed = False
-			# if using a file size limit, we need to check all previous files for the RPT number
-			if filename_idx is not None:
-				# go through all prev processed files for this cell
-				for f_idx in np.arange(filename_idx, -0.5, -1, dtype=int):
-					# get new filename for this current iteration of f_idx
-					filename_idx_start = str(filename.name).rindex('_part') + len('_part')
-					filename_iter = filename.parent.joinpath(f'{str(filename.name)[:filename_idx_start]}{f_idx:d}.pkl')
-					if not filename_iter.exists(): continue
-					df_cell_iter = pickle.load(open(filename_iter, 'rb'))
-
-					# if week_num exists then this current cycling file was already processed, skip
-					if week_num in df_cell_iter['Week Number'].values: 
-						cycling_processed = True
-						break
-			if cycling_processed: continue
 			#endregion
 
 			#region: create empty dataframe or load previous data for current cell
