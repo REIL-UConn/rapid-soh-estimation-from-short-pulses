@@ -250,14 +250,14 @@ def process_rpt_data(file_size_limit_gb=0.5):
 	"""
 	
 	all_folders = [f for f in dir_data_rpt_raw.glob('*') if f.is_dir()]
-	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath)[0:10]:
+	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath):
 		if not dir_week.is_dir(): continue
 		week_num = get_week_num_from_folder_filepath(dir_week)
 		rpt_num = int(week_num * 2)
 		print(f"Processing Week {week_num}...")
 
 		all_files = [f for f in dir_week.glob('*') if f.is_file()]
-		for file_rpt in sorted(all_files, key=get_channel_from_filename)[0:1]:
+		for file_rpt in sorted(all_files, key=get_channel_from_filename):
 			cell_id = df_test_tracker.loc[df_test_tracker['Channel'] == get_channel_from_filename(file_rpt), 'Cell ID'].values
 			assert len(cell_id) == 1
 			cell_id = int(cell_id[0])
@@ -326,13 +326,13 @@ def process_cycling_data(file_size_limit_gb=0.5):
 	"""
 
 	all_folders = [f for f in dir_data_cycling_raw.glob('*') if f.is_dir()]
-	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath)[0:10]:
+	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath):
 		if not dir_week.is_dir(): continue
 		week_num = get_week_num_from_folder_filepath(dir_week)
 		print(f"Processing Week {week_num}...")
 
 		all_files = [f for f in dir_week.glob('*') if f.is_file()]
-		for file_rpt in sorted(all_files, key=get_channel_from_filename)[0:1]:
+		for file_rpt in sorted(all_files, key=get_channel_from_filename):
 			cell_id = df_test_tracker.loc[df_test_tracker['Channel'] == get_channel_from_filename(file_rpt), 'Cell ID'].values
 			assert len(cell_id) == 1
 			cell_id = int(cell_id[0])
