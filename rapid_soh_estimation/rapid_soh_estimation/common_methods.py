@@ -53,10 +53,11 @@ def clean_time_series_features(ts:np.ndarray, ys:np.ndarray) -> tuple:
 
 
 
-def get_preprocessed_data_files(data_type:str, cell_id:int):
+def get_preprocessed_data_files(dir_preprocessed_data:Path, data_type:str, cell_id:int):
     """Returns a list of Path objects to all pkl files containing data for this cell
 
     Args:
+        dir_preprocessed_data (Path): location of downloaded preprocessed data
         data_type (str): {'rpt', 'cycling'}. Wether to look for RPT or Cycling data
         cell_id (int): The cell id to find data for
 
@@ -65,7 +66,7 @@ def get_preprocessed_data_files(data_type:str, cell_id:int):
     """
     assert data_type in ['rpt', 'cycling']
 
-    dir_data = dir_processed_data.joinpath(f'{data_type}_data')
+    dir_data = dir_preprocessed_data.joinpath(f'{data_type}_data')
     all_files = list(dir_data.glob(f'{data_type}_cell_{cell_id:02d}*'))
 
     def _file_part(file_path:Path):
