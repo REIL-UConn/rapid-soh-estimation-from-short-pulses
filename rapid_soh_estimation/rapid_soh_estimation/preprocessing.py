@@ -1,4 +1,8 @@
 
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).parent))
+
 from config import *
 from common_methods import *
 
@@ -258,9 +262,12 @@ def process_rpt_data(file_size_limit_gb=0.5):
 	print("Retreiving last processed RPT for each cell ... this may take a minute")
 	last_rpt_cell_map = {c:-1 for c in df_test_tracker['Cell ID'].unique()}
 	for c in last_rpt_cell_map.keys():
-		file = get_preprocessed_data_files(data_type='rpt', cell_id=c)
-		if hasattr(file, '__len__'): file = file[0]
-		last_rpt_cell_map[c] = pickle.load(open(file, 'rb'))['RPT Number'].max()
+		file = get_preprocessed_data_files(dir_data_preprocessed, data_type='rpt', cell_id=c)
+		if len(file) == 0: 
+			last_rpt_cell_map[c] = -1
+		else: 
+			file = file[-1]
+			last_rpt_cell_map[c] = pickle.load(open(file, 'rb'))['RPT Number'].max()
 	
 	# process all rpt file sequentially (skip already processed ones)
 	all_folders = [f for f in dir_data_rpt_raw.glob('*') if f.is_dir()]
@@ -328,9 +335,12 @@ def process_cycling_data(file_size_limit_gb=0.5):
 	print("Retreiving last processed cycling data for each cell ... this may take a minute")
 	last_week_cell_map = {c:-1 for c in df_test_tracker['Cell ID'].unique()}
 	for c in last_week_cell_map.keys():
-		file = get_preprocessed_data_files(data_type='cycling', cell_id=c)
-		if hasattr(file, '__len__'): file = file[0]
-		last_week_cell_map[c] = pickle.load(open(file, 'rb'))['Week Number'].max()
+		file = get_preprocessed_data_files(dir_data_preprocessed, data_type='cycling', cell_id=c)
+		if len(file) == 0: 
+			last_week_cell_map[c] = -1
+		else: 
+			file = file[-1]
+			last_week_cell_map[c] = pickle.load(open(file, 'rb'))['Week Number'].max()
 	
 	# process all cycling files sequentially (skip already processed ones)
 	all_folders = [f for f in dir_data_cycling_raw.glob('*') if f.is_dir()]
@@ -404,7 +414,7 @@ def add_life_info_to_rpt_data():
 
 if __name__ == '__main__':
 	process_cycling_data()
-	process_rpt_data()
-	add_life_info_to_rpt_data()
+	# process_rpt_data()
+	# add_life_info_to_rpt_data()
 
 	print('preprocessing.py complete.')

@@ -18,7 +18,7 @@ assert dir_repo_main.is_dir()
 
 
 # =================================================================================
-# GLOBAL PATH DEFINITONS
+#   GLOBAL PATH DEFINITONS
 # =================================================================================
 dir_figures = dir_repo_main.joinpath("figures")
 dir_notebooks = dir_repo_main.joinpath("notebooks")
@@ -27,12 +27,13 @@ dir_spreadsheets = dir_repo_main.joinpath("spreadsheets")
 
 
 # =================================================================================
-# GLOBAL VARIABLES
+#   GLOBAL VARIABLES
 # =================================================================================
 path_test_tracker = dir_spreadsheets.joinpath("Cell_Test_Tracker.xlsx")
 df_test_tracker = pd.read_excel(path_test_tracker, sheet_name=0, engine='openpyxl')
 
-
+path_v_vs_soc_1c_chg = dir_spreadsheets.joinpath("V vs SOC 1C Charge.csv")
+df_v_vs_soc_1c_chg = pd.read_csv(path_v_vs_soc_1c_chg)
 
 if __name__ == '__main__':
     print('config.py()')

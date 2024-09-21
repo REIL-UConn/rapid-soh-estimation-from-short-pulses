@@ -1,5 +1,24 @@
 
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).parent))
+
 from config import *
+
+
+def get_group_id(cell_id:int) -> int:
+    """Obtains the group id corresponding to the given cell id
+
+    Args:
+        cell_id (int): cell id to find group for
+
+    Returns:
+        int: group id corresponding to the given cell id
+    """
+    assert cell_id in df_test_tracker['Cell ID'].unique()
+    temp = df_test_tracker.loc[df_test_tracker['Cell ID'] == cell_id, 'Group'].values
+    assert len(temp) == 1, "Could not find group id for this cell"
+    return int(temp[0])
 
 
 def interp_time_series(ts:np.ndarray, ys:np.ndarray, n_points:int) -> tuple:
@@ -62,21 +81,21 @@ def get_preprocessed_data_files(dir_preprocessed_data:Path, data_type:str, cell_
         cell_id (int): The cell id to find data for
 
     Returns:
-        list or Path: list of Path objects or single path if only one data file exists
+        list: list of Path objects
     """
     assert data_type in ['rpt', 'cycling']
 
     dir_data = dir_preprocessed_data.joinpath(f'{data_type}_data')
     all_files = list(dir_data.glob(f'{data_type}_cell_{cell_id:02d}*'))
 
-    def _file_part(file_path:Path):
+    def _file_part_num(file_path:Path):
         file_str = str(file_path.name)
         return int(file_str[file_str.rindex('_part') + len('_part') : file_str.rindex('.pkl')])
-    if '_part' in str(all_files[0]):
-        return sorted(all_files, key=_file_part)
+    
+    if len(all_files) == 0 or '_part' not in str(all_files[0]): 
+        return all_files
     else:
-        assert len(all_files) == 1
-        return all_files[0]
+        return sorted(all_files, key=_file_part_num)
 	
 def load_processed_data(file_paths) -> pd.DataFrame:
     """Loads the processed data contained at the provided file path(s). Use 'get_preprocessed_data_files()' to get all file paths
@@ -90,6 +109,9 @@ def load_processed_data(file_paths) -> pd.DataFrame:
 
     if hasattr(file_paths, '__len__'):
         all_data = []
+        if len(file_paths) == 0:
+            print("WARNING: The provided list of filepaths is empty. Returning None")
+            return None
         for file_path in file_paths:
             all_data.append( pickle.load(open(file_path, 'rb')) )
         return pd.concat(all_data, ignore_index=True)
