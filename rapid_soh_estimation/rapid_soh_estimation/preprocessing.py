@@ -98,9 +98,12 @@ def get_channel_from_filename(f_file:Path) -> str:
 	Returns:
 		str: channel id (ex. '1-1')
 	"""
-
-	splits = str(f_file.name).split('-')
-	channel_id = splits[1] + '-' + splits[2]
+	try:
+		splits = str(f_file.name).split('-')
+		channel_id = splits[1] + '-' + splits[2]
+	except: 
+		print(f"Failed to get channel from: {f_file}")
+		raise RuntimeError
 	assert channel_id in df_test_tracker['Channel'].unique()
 	return channel_id
 
@@ -249,7 +252,16 @@ def process_rpt_data(file_size_limit_gb=0.5):
 	Args:
 		file_size_limit_gb (float, optional): Can optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once. Defaults to 0.5.
 	"""
+ 
+	# get last processed rpt number for each cell
+	print("Retreiving last processed RPT for each cell ... this may take a minute")
+	last_rpt_cell_map = {c:-1 for c in df_test_tracker['Cell ID'].unique()}
+	for c in last_rpt_cell_map.keys():
+		file = get_preprocessed_data_files(data_type='rpt', cell_id=c)
+		if hasattr(file, '__len__'): file = file[0]
+		last_rpt_cell_map[c] = pickle.load(open(file, 'rb'))['RPT Number'].max()
 	
+	# process all rpt file sequentially (skip already processed onese)
 	all_folders = [f for f in dir_data_rpt_raw.glob('*') if f.is_dir()]
 	for dir_week in sorted(all_folders, key=get_week_num_from_folder_filepath):
 		if not dir_week.is_dir(): continue
@@ -257,11 +269,14 @@ def process_rpt_data(file_size_limit_gb=0.5):
 		rpt_num = int(week_num * 2)
 		print(f"Processing Week {week_num}...")
 
-		all_files = [f for f in dir_week.glob('*') if f.is_file()]
+		all_files = [f for f in dir_week.glob('*.xlsx') if f.is_file()]
 		for file_rpt in sorted(all_files, key=get_channel_from_filename):
 			cell_id = df_test_tracker.loc[df_test_tracker['Channel'] == get_channel_from_filename(file_rpt), 'Cell ID'].values
 			assert len(cell_id) == 1
 			cell_id = int(cell_id[0])
+   
+			# skip if already processed
+			if rpt_num <= last_rpt_cell_map[cell_id]: continue
 
 			#region: get file name for saving processed data
 			filename = None
@@ -277,24 +292,6 @@ def process_rpt_data(file_size_limit_gb=0.5):
 					filename_idx += 1
 					filename = dir_processed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 			filename.parent.mkdir(parents=True, exist_ok=True)
-			#endregion
-
-			#region: check if this RPT was already processed, if so skip
-			rpt_processed = False
-			# if using a file size limit, we need to check all previous files for the RPT number
-			if filename_idx is not None:
-				# go through all prev processed files for this cell
-				for f_idx in np.arange(filename_idx, -0.5, -1, dtype=int):
-					# get new filename for this current iteration of f_idx
-					filename_idx_start = str(filename.name).rindex('_part') + len('_part')
-					filename_iter = filename.parent.joinpath(f'{str(filename.name)[:filename_idx_start]}{f_idx:d}.pkl')
-					if not filename_iter.exists(): continue
-					df_cell_iter = pickle.load(open(filename_iter, 'rb'))
-					# if RPT exists then this current RPT file was already processed, skip
-					if rpt_num in df_cell_iter['RPT Number'].values: 
-						rpt_processed = True
-						break
-			if rpt_processed: continue
 			#endregion
 
 			#region: create empty dataframe or load previous data for current cell
