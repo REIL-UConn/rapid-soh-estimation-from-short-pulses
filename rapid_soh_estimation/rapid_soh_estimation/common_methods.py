@@ -97,7 +97,7 @@ def get_preprocessed_data_files(dir_preprocessed_data:Path, data_type:str, cell_
     else:
         return sorted(all_files, key=_file_part_num)
 	
-def load_processed_data(file_paths) -> pd.DataFrame:
+def load_preprocessed_data(file_paths) -> pd.DataFrame:
     """Loads the processed data contained at the provided file path(s). Use 'get_preprocessed_data_files()' to get all file paths
 
     Args:

@@ -124,7 +124,7 @@ def get_rpt_df_cols():
 def get_cycling_df_cols():
 	"""Predefined set of column names to use when processing Cycling data"""
 	columns = [
-		'Week Number', 'Life', 'Date (yyyy.mm.dd hh.mm.ss)', 
+		'Week Number', 'Life', 'Date (yyyy.mm.dd hh.mm.ss)', 'Cycle Number',
 		'State', 'Time (s)', 'Voltage (V)', 'Current (A)', 'Capacity (Ah)',
 	]
 	return columns
@@ -243,6 +243,7 @@ def extract_data_from_cycling(path_cycling:Path, week_num=None) -> pd.DataFrame:
 		new_df['Week Number'] = np.full(len(cycling_data_details), week_num)
 	new_df['Life'] = np.full(len(cycling_data_details), '2nd' if is_second_life else '1st')
 	new_df['Date (yyyy.mm.dd hh.mm.ss)'] = pd.to_datetime(cycling_data_details['Date(h:min:s.ms)'].values, format="%Y-%m-%d %H:%M:%S")
+	new_df['Cycle Number'] = cycling_data_details['Cycle']
 	new_df['State'] = cycling_data_details['State']
 	new_df['Time (s)'] = convert_rpt_rel_time_to_float(cycling_data_details['Relative Time(h:min:s.ms)'])
 	new_df['Voltage (V)'] = cycling_data_details[v_key].astype(float).values * v_modifier
@@ -251,7 +252,7 @@ def extract_data_from_cycling(path_cycling:Path, week_num=None) -> pd.DataFrame:
 
 	return new_df
 
-def process_rpt_data(file_size_limit_gb=0.5):
+def process_rpt_data(file_size_limit_gb=0.100):
 	"""Automatically processes all RPT data. Skips files that have already been processed.
 
 	Args:
@@ -324,7 +325,7 @@ def process_rpt_data(file_size_limit_gb=0.5):
 			pickle.dump(df_cell, open(filename, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 			print('updated')
 	
-def process_cycling_data(file_size_limit_gb=0.5):
+def process_cycling_data(file_size_limit_gb=0.100):
 	"""Automatically processes all cycling data. Skips files that have already been processed.
 
 	Args:
@@ -400,21 +401,43 @@ def add_life_info_to_rpt_data():
 	"""Updates RPT dataframes to include a 'Life' column indicating which rows correspond to first life or second life
 	"""
 	for cell_id in df_test_tracker['Cell ID'].unique():
-		# load RPT and cycling data for current cell id
-		df_rpt_data = load_processed_data(get_preprocessed_data_files(data_type='rpt', cell_id=cell_id))
-		df_cycling_data = load_processed_data(get_preprocessed_data_files(data_type='cycling', cell_id=cell_id))
+		# load all cycling data for this cell
+		df_cycling_data = load_preprocessed_data(get_preprocessed_data_files(dir_data_preprocessed, data_type='cycling', cell_id=cell_id))
 
-		# create 'Life' column in RPT data
-		df_rpt_data['Life'] = np.full(len(df_rpt_data), '1st')
-		# set 2nd life based on life info from cycling dataframe
-		start_2nd_life = df_cycling_data.loc[df_cycling_data['Life'] == '2nd', 'Week Number'].values[0]
-		df_rpt_data.loc[df_rpt_data['Week Number'] > start_2nd_life, 'Life'] = '2nd'
+		# need to iterate through each RPT file separately so we can update it
+		all_rpt_files = get_preprocessed_data_files(dir_data_preprocessed, data_type='rpt', cell_id=cell_id)
+		for rpt_file in all_rpt_files:
+			# load rpt data for this single file
+			df_rpt_data = load_preprocessed_data(rpt_file)
 
+			# get all week numbers in this file and filter cycling data to only this range
+			df_cycling_data_filt = df_cycling_data.loc[df_cycling_data['Week Number'] <= df_rpt_data['Week Number'].max()]
+			
+			# create 'Life' and 'Num Cycles' columns in RPT data
+			df_rpt_data['Life'] = np.full(len(df_rpt_data), '1st')
+			df_rpt_data['Num Cycles'] = np.full(len(df_rpt_data), 0)
+
+			# set 2nd life based on life info from cycling dataframe
+			start_2nd_life = df_cycling_data_filt.loc[df_cycling_data_filt['Life'] == '2nd', 'Week Number'].values
+			if len(start_2nd_life) >= 1: 
+				start_2nd_life = start_2nd_life[0]
+				df_rpt_data.loc[df_rpt_data['Week Number'] > start_2nd_life, 'Life'] = '2nd'
+
+			# set number of cycles based on cycling dataframe
+			for rpt_week_num in sorted(df_rpt_data['Week Number'].unique()):
+				if rpt_week_num == 0.0: continue
+				num_cycles = df_cycling_data_filt.loc[df_cycling_data_filt['Week Number'] == rpt_week_num-0.5, 'Cycle Number'].max()
+				df_rpt_data.loc[df_rpt_data['Week Number'] == rpt_week_num] = num_cycles
+
+			# save updated rpt data file
+			pickle.dump(df_rpt_data, open(rpt_file, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
+
+		print(f"Cell {cell_id} updated with life info and cycle numbers")
 
 
 if __name__ == '__main__':
 	process_cycling_data()
-	# process_rpt_data()
-	# add_life_info_to_rpt_data()
+	process_rpt_data()
+	add_life_info_to_rpt_data()
 
 	print('preprocessing.py complete.')
