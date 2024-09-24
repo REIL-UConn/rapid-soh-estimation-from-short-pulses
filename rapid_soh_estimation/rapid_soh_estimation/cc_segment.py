@@ -57,12 +57,13 @@ def extract_cccv_charge(rpt_data:pd.DataFrame, plot_interpolation:bool=False) ->
 
         # cc charge before pulse interruption
         df_chg_p1 = rpt_data.loc[(rpt_data['RPT Number'] == rpt_num) & \
-                                (rpt_data['Segment Key'] == 'ref_chg') & \
-                                (rpt_data['Step Number'] == 50)]
+                                 (rpt_data['Segment Key'] == 'ref_chg') & \
+                                 (rpt_data['Step Number'] == 50)]
         # cccv charge after pulse interruption
         df_chg_p2 = rpt_data.loc[(rpt_data['RPT Number'] == rpt_num) & \
-                                (rpt_data['Segment Key'] == 'ref_chg') & \
-                                (rpt_data['Step Number'] == 54)]
+                                    (rpt_data['Segment Key'] == 'ref_chg') & \
+                                    (rpt_data['Step Number'] == 54)].copy()
+        df_chg_p2['Capacity (Ah)'] = df_chg_p2['Capacity (Ah)'].values + df_chg_p1['Capacity (Ah)'].values[-1]
         
         # create dic for current rpt to append to df
         temp_data = {c:None for c in cccv_charge.columns}

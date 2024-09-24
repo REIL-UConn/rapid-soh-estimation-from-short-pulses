@@ -427,7 +427,7 @@ def add_life_info_to_rpt_data():
 			for rpt_week_num in sorted(df_rpt_data['Week Number'].unique()):
 				if rpt_week_num == 0.0: continue
 				num_cycles = df_cycling_data_filt.loc[df_cycling_data_filt['Week Number'] == rpt_week_num-0.5, 'Cycle Number'].max()
-				df_rpt_data.loc[df_rpt_data['Week Number'] == rpt_week_num] = num_cycles
+				df_rpt_data.loc[df_rpt_data['Week Number'] == rpt_week_num, 'Num Cycles'] = num_cycles
 
 			# save updated rpt data file
 			pickle.dump(df_rpt_data, open(rpt_file, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
