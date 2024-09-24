@@ -9,7 +9,6 @@ from common_methods import *
 # This script pre-processes all raw RPT and cycling data
 # The data is saved into RPT Data and Cycling Data folders with one .pkl file per cell in each folder
 
-
 dir_dropbox = Path("/Users/bnowacki/Library/CloudStorage/Dropbox")
 assert dir_dropbox.exists()
 dir_data_rpt_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC RPT Data')
@@ -252,10 +251,12 @@ def extract_data_from_cycling(path_cycling:Path, week_num=None) -> pd.DataFrame:
 
 	return new_df
 
-def process_rpt_data(file_size_limit_gb=0.100):
+
+def process_rpt_data(dir_preprocessed_data:Path, file_size_limit_gb=0.100):
 	"""Automatically processes all RPT data. Skips files that have already been processed.
 
 	Args:
+		dir_preprocessed_data (Path): location of downloaded preprocessed data
 		file_size_limit_gb (float, optional): Can optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once. Defaults to 0.5.
 	"""
  
@@ -263,7 +264,7 @@ def process_rpt_data(file_size_limit_gb=0.100):
 	print("Retreiving last processed RPT for each cell ... this may take a minute")
 	last_rpt_cell_map = {c:-1 for c in df_test_tracker['Cell ID'].unique()}
 	for c in last_rpt_cell_map.keys():
-		file = get_preprocessed_data_files(dir_data_preprocessed, data_type='rpt', cell_id=c)
+		file = get_preprocessed_data_files(dir_preprocessed_data, data_type='rpt', cell_id=c)
 		if len(file) == 0: 
 			last_rpt_cell_map[c] = -1
 		else: 
@@ -291,15 +292,15 @@ def process_rpt_data(file_size_limit_gb=0.100):
 			filename = None
 			filename_idx = None
 			if file_size_limit_gb is None:
-				filename = dir_data_preprocessed.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}.pkl")
+				filename = dir_preprocessed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}.pkl")
 			# create new file if previous file size is too large
 			else: 
 				# find the next filename_idx of a file with size < file_size_limit_gb
 				filename_idx = 0
-				filename = dir_data_preprocessed.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+				filename = dir_preprocessed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 				while filename.exists() and ((filename.stat().st_size / 1000000000) >= file_size_limit_gb):
 					filename_idx += 1
-					filename = dir_data_preprocessed.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+					filename = dir_preprocessed_data.joinpath("rpt_data", f"rpt_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 			filename.parent.mkdir(parents=True, exist_ok=True)
 			#endregion
 
@@ -325,10 +326,11 @@ def process_rpt_data(file_size_limit_gb=0.100):
 			pickle.dump(df_cell, open(filename, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 			print('updated')
 	
-def process_cycling_data(file_size_limit_gb=0.100):
+def process_cycling_data(dir_preprocessed_data:Path, file_size_limit_gb=0.100):
 	"""Automatically processes all cycling data. Skips files that have already been processed.
 
 	Args:
+		dir_preprocessed_data (Path): location of downloaded preprocessed data
 		file_size_limit_gb (float, optional): Can optionally set a maximum filesize in gigabytes. Processed data will be split into multiple files if not None. Note that this is not a strict limit as all data from a single week number is saved at once. Defaults to 0.5.
 	"""
 
@@ -336,7 +338,7 @@ def process_cycling_data(file_size_limit_gb=0.100):
 	print("Retreiving last processed cycling data for each cell ... this may take a minute")
 	last_week_cell_map = {c:-1 for c in df_test_tracker['Cell ID'].unique()}
 	for c in last_week_cell_map.keys():
-		file = get_preprocessed_data_files(dir_data_preprocessed, data_type='cycling', cell_id=c)
+		file = get_preprocessed_data_files(dir_preprocessed_data, data_type='cycling', cell_id=c)
 		if len(file) == 0: 
 			last_week_cell_map[c] = -1
 		else: 
@@ -363,15 +365,15 @@ def process_cycling_data(file_size_limit_gb=0.100):
 			filename = None
 			filename_idx = None
 			if file_size_limit_gb is None:
-				filename = dir_data_preprocessed.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}.pkl")
+				filename = dir_preprocessed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}.pkl")
 			# create new file if previous file size is too large
 			else:
 				# find the next filename_idx of a file with size < file_size_limit_gb
 				filename_idx = 0
-				filename = dir_data_preprocessed.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+				filename = dir_preprocessed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 				while filename.exists() and ((filename.stat().st_size / 1000000000) >= file_size_limit_gb):
 					filename_idx += 1
-					filename = dir_data_preprocessed.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
+					filename = dir_preprocessed_data.joinpath("cycling_data", f"cycling_cell_{cell_id:02d}_part{filename_idx:d}.pkl")
 			filename.parent.mkdir(parents=True, exist_ok=True)
 			#endregion
 
@@ -397,18 +399,25 @@ def process_cycling_data(file_size_limit_gb=0.100):
 			pickle.dump(df_cell, open(filename, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 			print('updated')
 
-def add_life_info_to_rpt_data():
+def add_life_info_to_rpt_data(dir_preprocessed_data:Path):
 	"""Updates RPT dataframes to include a 'Life' column indicating which rows correspond to first life or second life
+	Args:
+		dir_preprocessed_data (Path): location of downloaded preprocessed data
 	"""
+
+	print(f"Updating RPT data with \'Life\' and \'Num Cycles\' information...")
 	for cell_id in df_test_tracker['Cell ID'].unique():
 		# load all cycling data for this cell
-		df_cycling_data = load_preprocessed_data(get_preprocessed_data_files(dir_data_preprocessed, data_type='cycling', cell_id=cell_id))
+		df_cycling_data = load_preprocessed_data(get_preprocessed_data_files(dir_preprocessed_data, data_type='cycling', cell_id=cell_id))
 
 		# need to iterate through each RPT file separately so we can update it
-		all_rpt_files = get_preprocessed_data_files(dir_data_preprocessed, data_type='rpt', cell_id=cell_id)
+		all_rpt_files = get_preprocessed_data_files(dir_preprocessed_data, data_type='rpt', cell_id=cell_id)
 		for rpt_file in all_rpt_files:
 			# load rpt data for this single file
 			df_rpt_data = load_preprocessed_data(rpt_file)
+
+			# skip if already added info to this RPT
+			if ('Life' in df_rpt_data.columns) and ('Num Cycles' in df_rpt_data.columns): continue
 
 			# get all week numbers in this file and filter cycling data to only this range
 			df_cycling_data_filt = df_cycling_data.loc[df_cycling_data['Week Number'] <= df_rpt_data['Week Number'].max()]
@@ -436,8 +445,12 @@ def add_life_info_to_rpt_data():
 
 
 if __name__ == '__main__':
-	process_cycling_data()
-	process_rpt_data()
-	add_life_info_to_rpt_data()
+	# if using external SSD
+	temp = Path("/Volumes/T7/Datasets to Publish/ILCC-LFP-aging-dataset")
+	# otherwise can just use dir_data_preprocessed (defined at top of this file)
 
-	print('preprocessing.py complete.')
+	process_cycling_data(dir_preprocessed_data=temp)
+	process_rpt_data(dir_preprocessed_data=temp)
+	add_life_info_to_rpt_data(dir_preprocessed_data=temp)
+
+	print('preprocessing.py complete.\n')

@@ -118,10 +118,8 @@ def load_preprocessed_data(file_paths) -> pd.DataFrame:
     else:
         return pickle.load(open(file_paths, 'rb'))
 
-
-
-def load_modeling_data(data_type:str, filepath:str=None) -> dict:
-	"""Loads saved modeling data for the specified data type
+def load_processed_data(data_type:str, filepath:str=None) -> dict:
+	"""Loads saved processed data for the specified data type
 
 	Args:
 		data_type (str): {'cc', 'slowpulse', 'fastpulse', 'ultrafastpulse'}. The data_type the data corresponds to.
@@ -138,7 +136,7 @@ def load_modeling_data(data_type:str, filepath:str=None) -> dict:
 			raise ValueError(f"Could not find specified file: {f}")
 		return pickle.load(open(f, 'rb'))
 	else:
-		prev_files = sorted(dir_processed_data.joinpath(data_type).glob(f"modeling_data_{data_type}_*"))
+		prev_files = sorted(dir_processed_data.joinpath(data_type).glob(f"processed_data_{data_type}_*"))
 		if len(prev_files) == 0: 
 			raise ValueError("Could not find any previously saved files. Try providing a filename")
 		else:
