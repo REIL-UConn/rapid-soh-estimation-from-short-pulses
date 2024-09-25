@@ -20,6 +20,129 @@ def get_group_id(cell_id:int) -> int:
     assert len(temp) == 1, "Could not find group id for this cell"
     return int(temp[0])
 
+def get_cell_ids_in_group(group_id:int) -> np.ndarray:
+	"""Gets all cell ids in the specified group id
+
+	Args:
+		group_id (int): The id of the group for which to return the cell ids 
+
+	Returns:
+		np.ndarray: An array of all cell_ids in the specified group
+	"""
+	assert group_id in df_test_tracker['Group'].unique(), f"Invalid group id entered: {group_id}. The group id must be one of the following: {df_test_tracker['Group'].unique()}"
+	start = (group_id - 1) * 6
+	end = min(start+6, 64)
+	return np.arange(start, end, 1) + 2
+
+
+
+class Custom_CVSplitter():
+	"""A custom cross-validation split wrapper. Allows for splitting by group_id or cell_id and returns n_splits number of cross validation folds
+	"""
+
+	def __init__(self, n_splits=3, split_type='group_id', rand_seed=None):
+		assert isinstance(n_splits, int), "\'n_splits\' must be an interger value"
+		self.n_splits = n_splits
+		self.allowed_split_types = ['group_id', 'cell_id']
+		assert split_type in self.allowed_split_types, "ValueError. \'split type\' must be one of the following: {}".format(self.allowed_split_types)
+		self.split_type = split_type
+		self.rand_seed = rand_seed
+		
+	def get_n_splits(self, X, y, groups):
+		return self.n_splits
+
+	def split(self, X, y, cell_ids):
+		'given input data (X) and output data (y), returns (train_idxs, test_idxs) --> idxs are relative to X & y'
+		kf = None
+		if self.rand_seed is None:
+			kf = KFold(n_splits=self.n_splits, shuffle=True)
+		else:
+			kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.rand_seed)
+		
+		if self.split_type == self.allowed_split_types[0]:      # 'group_id'
+			group_ids = np.arange(1, 12, 1)
+			# for every cv split (by group), convert group_id_idxs to X & y idxs
+			for train_group_idxs, test_group_idxs in kf.split(group_ids):
+				train_idxs = []
+				test_idxs = []
+				train_groups = group_ids[train_group_idxs]
+				test_groups = group_ids[test_group_idxs]
+				# go through all train group ids in this split
+				for train_group_id in train_groups: 
+					train_cell_ids = get_cell_ids_in_group(train_group_id)
+					# add X & y idxs where cell_id is equal to each cell in this group
+					for cell_id in train_cell_ids:
+						cell_idxs = np.hstack(np.argwhere( cell_ids == cell_id ))
+						train_idxs.append(cell_idxs)
+				# go through all test group ids in this split
+				for test_group_id in test_groups:
+					test_cell_ids = get_cell_ids_in_group(test_group_id)
+					# add X & y idxs where cell_id is equal to each cell in this group
+					for cell_id in test_cell_ids:
+						cell_idxs = np.hstack(np.argwhere( cell_ids == cell_id ))
+						test_idxs.append(cell_idxs)
+
+				train_idxs = np.hstack(train_idxs)
+				test_idxs = np.hstack(test_idxs)
+				yield train_idxs, test_idxs
+				
+		elif self.split_type == self.allowed_split_types[1]:      # 'cell_id'
+			# for every cv split (by cell), convert cell_id_idxs to X & y idxs
+			for train_cell_idxs, test_cell_idxs in kf.split(np.unique(cell_ids)):
+				train_idxs = []
+				test_idxs = []
+				train_cells = np.unique(cell_ids)[train_cell_idxs]
+				test_cells = np.unique(cell_ids)[test_cell_idxs]
+				
+				# go through all train group ids in this split
+				for train_cell_id in train_cells: 
+					cell_idxs = np.hstack(np.argwhere(cell_ids == train_cell_id))
+					train_idxs.append(cell_idxs)
+					
+				# go through all test group ids in this split
+				for test_cell_id in test_cells:
+					cell_idxs = np.hstack(np.argwhere(cell_ids == test_cell_id))
+					test_idxs.append(cell_idxs)
+			
+				train_idxs = np.hstack(train_idxs)
+				test_idxs = np.hstack(test_idxs)
+				yield train_idxs, test_idxs
+
+def create_modeling_data(all_data:dict, input_feature_keys:list, output_feature_keys:list=['q_dchg', 'dcir_chg_20', 'dcir_chg_50', 'dcir_chg_90', 'dcir_dchg_20', 'dcir_dchg_50', 'dcir_dchg_90']) -> dict:
+	"""Returns new dictionary with 'model_input' and 'model_output' keys for simpler model training
+
+	Args:
+		all_data (dict): All data from which to extrac the specified input and output feature
+		input_feature_keys (list): A list of keys (that exist in all_data.keys()) to use as model input
+		output_feature_keys (list, optional): A list of keys (that exist in all_data.keys()) to use as model output. Defaults to ['q_dchg', 'dcir_chg_20', 'dcir_chg_50', 'dcir_chg_90', 'dcir_dchg_20', 'dcir_dchg_50', 'dcir_dchg_90'].
+
+	Returns:
+		dict: A new dict with keys: ['cell_id', 'group_id', 'rpt', 'model_input', 'model_output']
+	"""
+	assert len(input_feature_keys) > 0
+	for f in input_feature_keys: assert f in list(all_data.keys())
+	for f in output_feature_keys: assert f in list(all_data.keys())
+
+	modeling_dic = {
+		'cell_id':all_data['cell_id'],
+		'group_id':all_data['group_id'],
+	 	'rpt':all_data['rpt'],
+		'model_input':[],
+		'model_output':[],
+	}
+	if len(input_feature_keys) == 1:
+		modeling_dic['model_input'] = all_data[input_feature_keys[0]]
+
+	for i in range(len(all_data['cell_id'])):
+		if len(input_feature_keys) > 1:
+			modeling_dic['model_input'].append( [all_data[f_key][i] for f_key in input_feature_keys] )
+		modeling_dic['model_output'].append( [all_data[f_key][i] for f_key in output_feature_keys] )
+
+	modeling_dic['model_input'] = np.asarray(modeling_dic['model_input'])
+	modeling_dic['model_output'] = np.asarray(modeling_dic['model_output'])
+	return modeling_dic
+
+
 
 def interp_time_series(ts:np.ndarray, ys:np.ndarray, n_points:int) -> tuple:
     """Interpolates all y arrays to n_points based on a shared time array
