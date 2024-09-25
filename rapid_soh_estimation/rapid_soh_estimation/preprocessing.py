@@ -279,7 +279,7 @@ def process_rpt_data(dir_preprocessed_data:Path, file_size_limit_gb=0.100):
 		rpt_num = int(week_num * 2)
 		print(f"Processing Week {week_num}...")
 
-		all_files = [f for f in dir_week.glob('*.xlsx') if f.is_file()]
+		all_files = [f for f in dir_week.glob('*.xlsx') if f.is_file() and (not str(f.name) == '.DS_Store')]
 		for file_rpt in sorted(all_files, key=get_channel_from_filename):
 			cell_id = df_test_tracker.loc[df_test_tracker['Channel'] == get_channel_from_filename(file_rpt), 'Cell ID'].values
 			assert len(cell_id) == 1
@@ -352,7 +352,7 @@ def process_cycling_data(dir_preprocessed_data:Path, file_size_limit_gb=0.100):
 		week_num = get_week_num_from_folder_filepath(dir_week)
 		print(f"Processing Week {week_num}...")
 
-		all_files = [f for f in dir_week.glob('*') if f.is_file()]
+		all_files = [f for f in dir_week.glob('*') if f.is_file() and (not str(f.name) == '.DS_Store')]
 		for file_rpt in sorted(all_files, key=get_channel_from_filename):
 			cell_id = df_test_tracker.loc[df_test_tracker['Channel'] == get_channel_from_filename(file_rpt), 'Cell ID'].values
 			assert len(cell_id) == 1
