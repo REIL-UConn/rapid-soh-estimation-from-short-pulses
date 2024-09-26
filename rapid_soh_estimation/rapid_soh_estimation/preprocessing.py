@@ -449,8 +449,18 @@ if __name__ == '__main__':
 	temp = Path("/Volumes/T7/Datasets to Publish/ILCC-LFP-aging-dataset")
 	# otherwise can just use dir_data_preprocessed (defined at top of this file)
 
-	process_cycling_data(dir_preprocessed_data=temp)
-	process_rpt_data(dir_preprocessed_data=temp)
-	add_life_info_to_rpt_data(dir_preprocessed_data=temp)
+	# process_cycling_data(dir_preprocessed_data=temp)
+	# process_rpt_data(dir_preprocessed_data=temp)
+	# add_life_info_to_rpt_data(dir_preprocessed_data=temp)
 
+	# TODO: remove this
+	# print SOH of cells still cycling
+	from postprocessing import get_health_features_from_rpt_data
+	cells_cycling = [2,4,22,30,52,54,56,58,60]
+	print("Cells still cycling: ")
+	for cell in cells_cycling:
+		rpt_data = load_preprocessed_data(get_preprocessed_data_files(dir_preprocessed_data=temp, data_type='rpt', cell_id=cell))
+		qdchg_init = get_health_features_from_rpt_data(rpt_data.loc[rpt_data['RPT Number'] == 0])['q_dchg'].values[0]
+		qdchg_cur = get_health_features_from_rpt_data(rpt_data.loc[rpt_data['RPT Number'] == rpt_data['RPT Number'].max()])['q_dchg'].values[0]
+		print(f"  Cell {cell}: SOH={round(qdchg_cur/qdchg_init*100, 4)}%")
 	print('preprocessing.py complete.\n')
