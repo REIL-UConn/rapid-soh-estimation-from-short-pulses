@@ -13,7 +13,7 @@ dir_dropbox = Path("/Users/bnowacki/Library/CloudStorage/Dropbox")
 assert dir_dropbox.exists()
 dir_data_rpt_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC RPT Data')
 dir_data_cycling_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC Cycling Data')
-dir_data_preprocessed = dir_dropbox.joinpath("Datasets to Publish", "ILCC-LFP-aging-dataset")
+dir_data_preprocessed = dir_dropbox.joinpath("Datasets to Publish", "UConn-ISU-ILCC LFP/Gr battery aging")
 
 
 def get_neware_data_header_keys(rpt_data:pd.DataFrame) -> tuple:
@@ -446,7 +446,7 @@ def add_life_info_to_rpt_data(dir_preprocessed_data:Path):
 
 if __name__ == '__main__':
 	# if using external SSD
-	temp = Path("/Volumes/T7/Datasets to Publish/ILCC-LFP-aging-dataset")
+	temp = Path("/Volumes/T7/Datasets to Publish/UConn-ISU-ILCC LFP/Gr battery aging")
 	# otherwise can just use dir_data_preprocessed (defined at top of this file)
 
 	# process_cycling_data(dir_preprocessed_data=temp)

@@ -453,7 +453,7 @@ def perform_postprocessing(dir_preprocessed_data:Path):
 
 if __name__ == '__main__':
     # if using external SSD
-	temp = Path("/Volumes/T7/Datasets to Publish/ILCC-LFP-aging-dataset")
+	temp = Path("/Volumes/T7/Datasets to Publish/UConn-ISU-ILCC LFP/Gr battery aging")
 	perform_postprocessing(dir_preprocessed_data=temp)
 	
 	print('postprocessing.py complete.\n')
