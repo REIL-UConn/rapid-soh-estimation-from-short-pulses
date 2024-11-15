@@ -37,9 +37,9 @@ assert dir_repo_main.is_dir()
 # =================================================================================
 #   USER-SPECIFIC PATH DEFINITONS
 # =================================================================================
-dir_preprocessed_data = Path("/Users/bnowacki/Library/CloudStorage/Dropbox/Datasets to Publish/UConn-ISU-ILCC LFP battery aging")
-dir_NMC_data = Path("/Users/bnowacki/Library/CloudStorage/Dropbox/Battery Repurposing Data 2/NMC Dataset/RWTH-2021-04545_818642")
-# TODO: ABOVE LINES ARE USER SPECIFIC (ALSO CHANGE NOTEBOOKS TO TEMPLATE)
+dir_preprocessed_data = Path(r"<path to downloaded data>", "UConn-ISU-ILCC LFP battery aging")
+dir_NMC_data = Path(r"<path to downloaded data>", "/RWTH-2021-04545_818642")
+# TODO: ABOVE LINES ARE USER SPECIFIC - YOU MUST SET <path to downloaded data>
 
 
 

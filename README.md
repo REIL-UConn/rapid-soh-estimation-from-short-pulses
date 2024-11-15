@@ -94,9 +94,6 @@ This folder contains scripts pertaining to unique aspects of data processing and
   - **IMPORTANT**: You must set the local paths to the downloaded data for the LFP and NMC datasets: `dir_preprocessed_data` and `dir_NMC_data`, respectively.
 * `../common_methods.py`
   - Contains a set of functions commonly used within the subsequent Python scripts
-* `../preprocessing.py` 
-  - Contains all code pertaining to the processing of the raw data for the LFP/Gr dataset.
-  - TODO: remove this from the publicly available repository. Only pre-processed data will be published.
 * `../postprocessing.py`
   - Contains all code pertaining to processing the downloaded data for the LFP/Gr dataset. 
   - Running the script will process the downloaded data located at the path defined in `config.py`. Note that this *won't* overwrite previously processed data; it will simply save a new copy.  
