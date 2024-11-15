@@ -13,7 +13,6 @@ dir_dropbox = Path("/Users/bnowacki/Library/CloudStorage/Dropbox")
 assert dir_dropbox.exists()
 dir_data_rpt_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC RPT Data')
 dir_data_cycling_raw = dir_dropbox.joinpath('Battery Repurposing Data', 'ILCC Cycling Data')
-dir_data_preprocessed = dir_dropbox.joinpath("Datasets to Publish", "UConn-ISU-ILCC LFP/Gr battery aging")
 
 
 def get_neware_data_header_keys(rpt_data:pd.DataFrame) -> tuple:
@@ -445,22 +444,10 @@ def add_life_info_to_rpt_data(dir_preprocessed_data:Path):
 
 
 if __name__ == '__main__':
-	# if using external SSD
-	temp = Path("/Volumes/T7/Datasets to Publish/UConn-ISU-ILCC LFP/Gr battery aging")
-	# otherwise can just use dir_data_preprocessed (defined at top of this file)
-
-	# process_cycling_data(dir_preprocessed_data=temp)
-	# process_rpt_data(dir_preprocessed_data=temp)
-	# add_life_info_to_rpt_data(dir_preprocessed_data=temp)
-
-	# TODO: remove this
-	# print SOH of cells still cycling
-	from postprocessing import get_health_features_from_rpt_data
-	cells_cycling = [2,4,22,30,52,54,56,58,60]
-	print("Cells still cycling: ")
-	for cell in cells_cycling:
-		rpt_data = load_preprocessed_data(get_preprocessed_data_files(dir_preprocessed_data=temp, data_type='rpt', cell_id=cell))
-		qdchg_init = get_health_features_from_rpt_data(rpt_data.loc[rpt_data['RPT Number'] == 0])['q_dchg'].values[0]
-		qdchg_cur = get_health_features_from_rpt_data(rpt_data.loc[rpt_data['RPT Number'] == rpt_data['RPT Number'].max()])['q_dchg'].values[0]
-		print(f"  Cell {cell}: SOH={round(qdchg_cur/qdchg_init*100, 4)}%")
+	process_cycling_data(dir_preprocessed_data=dir_preprocessed_data)
+	process_rpt_data(dir_preprocessed_data=dir_preprocessed_data)
+	add_life_info_to_rpt_data(dir_preprocessed_data=dir_preprocessed_data)
+	
 	print('preprocessing.py complete.\n')
+
+	# TODO: exclude this script from the public repo

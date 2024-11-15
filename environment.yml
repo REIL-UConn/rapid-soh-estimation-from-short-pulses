@@ -22,6 +22,7 @@ dependencies:
   - scipy=1.13.1
   - sqlite=3.45.3
   - tensorflow=2.10.0
+  - xgboost=2.1.1
   - pip:
       - typing-extensions==4.12.2
 prefix: /opt/anaconda3/envs/envRapidSOH
