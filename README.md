@@ -1,5 +1,5 @@
 # rapid-soh-estimation-from-short-pulses
-This repository contains the Python scripts and processed data required to recreate the results and figures presented in the paper: "Rapid Estimation of Lithium-Ion Battery Capacity and Resistance from Short Duration Current Pulses" ($\textcolor{red}{\text{doi will be provided soon}}$)
+This repository contains the Python scripts and processed data required to recreate the results and figures presented in the paper: "Rapid Estimation of Lithium-Ion Battery Capacity and Resistance from Short Duration Current Pulses" ([https://doi.org/10.1016/j.jpowsour.2024.235813](https://doi.org/10.1016/j.jpowsour.2024.235813))
 
 *Questions pertaining to the scripts and data provided in this repository can be directed to Ben Nowacki (benjamin.nowacki@uconn.edu)*
 
