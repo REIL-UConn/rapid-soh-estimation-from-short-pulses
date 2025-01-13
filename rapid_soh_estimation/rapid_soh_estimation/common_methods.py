@@ -190,7 +190,7 @@ def clean_time_series_features(ts:np.ndarray, ys:np.ndarray) -> tuple:
     return ts_clean, ys_clean
 
 def get_preprocessed_data_files(dir_preprocessed_data:Path, data_type:str, cell_id:int):
-    """Returns a list of Path objects to all pkl files containing data for this cell
+    """Returns a list of Path objects to all files containing data for this cell
 
     Args:
         dir_preprocessed_data (Path): location of downloaded preprocessed data
@@ -207,13 +207,13 @@ def get_preprocessed_data_files(dir_preprocessed_data:Path, data_type:str, cell_
 
     def _file_part_num(file_path:Path):
         file_str = str(file_path.name)
-        return int(file_str[file_str.rindex('_part') + len('_part') : file_str.rindex('.pkl')])
+        return int(file_str[file_str.rindex('_part') + len('_part') : file_str.rindex(f'{file_path.suffix}')])
     
     if len(all_files) == 0 or '_part' not in str(all_files[0]): 
         return all_files
     else:
         return sorted(all_files, key=_file_part_num)
-	
+    
 def load_preprocessed_data(file_paths) -> pd.DataFrame:
     """Loads the processed data contained at the provided file path(s). Use 'get_preprocessed_data_files()' to get all file paths
 
@@ -230,7 +230,13 @@ def load_preprocessed_data(file_paths) -> pd.DataFrame:
             print("WARNING: The provided list of filepaths is empty. Returning None")
             return None
         for file_path in file_paths:
-            all_data.append( pickle.load(open(file_path, 'rb')) )
+            if file_path.suffix == '.pkl':
+                all_data.append( pickle.load(open(file_path, 'rb')) )
+            elif file_path.suffix == '.csv':
+                all_data.append( pd.read_csv(file_path) )
+            else:
+                raise TypeError(f"File suffix ({file_path.suffix}) not supported.")
+                 
         return pd.concat(all_data, ignore_index=True)
     else:
         return pickle.load(open(file_paths, 'rb'))

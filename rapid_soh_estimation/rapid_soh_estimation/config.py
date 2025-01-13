@@ -38,7 +38,7 @@ assert dir_repo_main.is_dir()
 #   USER-SPECIFIC PATH DEFINITONS
 # =================================================================================
 dir_preprocessed_data = Path(r"<path to downloaded data>", "UConn-ISU-ILCC LFP battery aging")
-dir_NMC_data = Path(r"<path to downloaded data>", "/RWTH-2021-04545_818642")
+dir_NMC_data = Path(r"<path to downloaded data>", "RWTH-2021-04545_818642")
 # TODO: ABOVE LINES ARE USER SPECIFIC - YOU MUST SET <path to downloaded data>
 
 
