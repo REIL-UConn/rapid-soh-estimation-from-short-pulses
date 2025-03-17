@@ -73,9 +73,7 @@ The notebooks directory contains several Jupyter notebooks that were used to con
 
 ### `processed_data/`
 
-Note that due to the size of all raw data, only processed data is retained in this Git repository. The raw data collected on the 64 LFP/Gr cells can be downloaded at: 
-
-$\textcolor{red}{\text{LINK TO LFP/Gr DATASET WILL BE PUBLISHED SOON}}$
+Note that due to the size of all raw data, only processed data is retained in this Git repository. The raw data collected on the 64 LFP/Gr cells can be downloaded at: [https://digitalcommons.lib.uconn.edu/reil_datasets/1/](https://digitalcommons.lib.uconn.edu/reil_datasets/1/).
 
 Please see the 'README.md' file contained in the above linked data for an overview of how the raw data files are structured.
 
